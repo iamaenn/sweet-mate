@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(anthropic-skills:pdf)",
+      "Skill(anthropic-skills:pdf:*)",
+      "Bash(npm install *)",
+      "Read(//usr/local/**)",
+      "Bash(command -v node)",
+      "PowerShell(winget --version)"
+    ]
+  }
+}

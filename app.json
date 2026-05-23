@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Sweet Mate",
+    "slug": "sweet-mate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FFF0F3"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sweetmate.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "スクリーンショットをアップロードするために写真ライブラリへのアクセスが必要です。",
+        "NSCameraUsageDescription": "スクリーンショットを撮影するためにカメラへのアクセスが必要です。"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFF0F3"
+      },
+      "package": "com.sweetmate.app",
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "スクリーンショットをアップロードするために写真ライブラリへのアクセスが必要です。"
+        }
+      ]
+    ]
+  }
+}
