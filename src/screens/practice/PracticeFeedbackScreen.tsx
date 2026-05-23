@@ -182,7 +182,6 @@ const styles = StyleSheet.create({
   scoreLabel: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing.sm },
   scoreBadge: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
     borderWidth: 4,
     borderRadius: 70,
     width: 140,

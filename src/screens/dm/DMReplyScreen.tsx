@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   },
   goalChipSelected: { backgroundColor: colors.secondary, borderColor: colors.secondary },
   goalEmoji: { fontSize: 16 },
-  goalLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, whiteSpace: 'nowrap' },
+  goalLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
   goalLabelSelected: { color: '#fff' },
   instructionInput: {
     borderWidth: 1,

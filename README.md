@@ -33,16 +33,18 @@
 - **Android**: Google Play で「Expo Go」を検索
 
 ### ③ インストール手順
+**以下をコピーして、PowerShellに貼り付けること！**
 
 ```bash
 # 依存パッケージのインストール
-npm install
+# 開発コンテナ起動時にインストールされるため、不要
+# npm install
 
 # .envファイルにAPIキーを設定
 # EXPO_PUBLIC_ANTHROPIC_API_KEY=あなたのAPIキー
 
 # 開発サーバーを起動
-npm start
+npx expo start --tunnel
 ```
 
 ### APIキーの取得
@@ -53,7 +55,7 @@ npm start
 
 ### スマートフォンでの実行
 1. スマートフォンに **Expo Go** アプリをインストール
-2. `npm start` を実行するとQRコードが表示される
+2. `npx expo start --tunnel` を実行するとQRコードが表示される
 3. iOSはカメラ、AndroidはExpo GoアプリでQRコードを読み取る
 
 ## 技術スタック

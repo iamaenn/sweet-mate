@@ -21,3 +21,6 @@ npm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Claude Code worktrees (ローカル一時ファイル・コミット対象外)
+.claude/worktrees/
