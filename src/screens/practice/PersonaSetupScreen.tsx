@@ -11,10 +11,19 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, borderRadius, shadow, typography } from '../../constants/theme';
-import { PersonaConfig, PracticeLevel, PRACTICE_LEVELS, PracticeStackParamList } from '../../types';
+import { PersonaConfig, PracticeLevel, PRACTICE_LEVELS, PracticeStackParamList, DMConversation, PlatformKey } from '../../types';
+
+const DM_STORAGE_KEY = '@sweetmate_conversations';
+
+const PLATFORM_INFO: Record<PlatformKey, { label: string; color: string; emoji: string }> = {
+  line: { label: 'LINE', color: '#06C755', emoji: '💬' },
+  instagram: { label: 'Instagram', color: '#E1306C', emoji: '📸' },
+  matching: { label: 'マッチングアプリ', color: '#FF6B8A', emoji: '💕' },
+};
 
 type NavProp = StackNavigationProp<PracticeStackParamList, 'PersonaSetup'>;
 
@@ -77,6 +86,28 @@ export default function PersonaSetupScreen() {
     additionalInfo: '',
   });
   const [usePreset, setUsePreset] = useState(false);
+  const [useDMPartner, setUseDMPartner] = useState(false);
+  const [dmConversations, setDmConversations] = useState<DMConversation[]>([]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDMConversations();
+    }, [])
+  );
+
+  const loadDMConversations = async () => {
+    try {
+      const data = await AsyncStorage.getItem(DM_STORAGE_KEY);
+      if (data) {
+        const raw = JSON.parse(data) as any[];
+        const migrated: DMConversation[] = raw.map(c => ({
+          ...c,
+          platforms: c.platforms ?? (c.platform ? [c.platform] : ['line']),
+        }));
+        setDmConversations(migrated);
+      }
+    } catch {}
+  };
 
   const update = (key: keyof PersonaConfig, value: string) => {
     setPersona(prev => ({ ...prev, [key]: value }));
@@ -85,6 +116,14 @@ export default function PersonaSetupScreen() {
   const applyPreset = (config: PersonaConfig) => {
     setPersona(config);
     setUsePreset(false);
+  };
+
+  const applyDMPartner = (conv: DMConversation) => {
+    setPersona(prev => ({
+      ...prev,
+      name: conv.name,
+    }));
+    setUseDMPartner(false);
   };
 
   const handleStart = () => {
@@ -113,6 +152,55 @@ export default function PersonaSetupScreen() {
       </LinearGradient>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* 返信提案の相手から選ぶ */}
+        {dmConversations.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>💌 返信提案の相手から選ぶ</Text>
+              <TouchableOpacity onPress={() => setUseDMPartner(!useDMPartner)}>
+                <Text style={styles.toggleText}>{useDMPartner ? '閉じる' : '選択する'}</Text>
+              </TouchableOpacity>
+            </View>
+            {useDMPartner && (
+              <View style={styles.dmPartnerList}>
+                {dmConversations.map(conv => {
+                  const primaryPlatform = PLATFORM_INFO[conv.platforms[0]];
+                  return (
+                    <TouchableOpacity
+                      key={conv.id}
+                      style={[
+                        styles.dmPartnerCard,
+                        persona.name === conv.name && styles.dmPartnerCardSelected,
+                      ]}
+                      onPress={() => applyDMPartner(conv)}
+                    >
+                      <View style={[styles.dmAvatar, { backgroundColor: primaryPlatform.color + '20' }]}>
+                        <Text style={styles.dmAvatarEmoji}>{primaryPlatform.emoji}</Text>
+                      </View>
+                      <View style={styles.dmPartnerInfo}>
+                        <Text style={styles.dmPartnerName}>{conv.name}</Text>
+                        <View style={styles.dmBadgeRow}>
+                          {conv.platforms.map(key => {
+                            const info = PLATFORM_INFO[key];
+                            return (
+                              <View key={key} style={[styles.dmBadge, { backgroundColor: info.color + '15' }]}>
+                                <Text style={[styles.dmBadgeText, { color: info.color }]}>{info.label}</Text>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      </View>
+                      {persona.name === conv.name && (
+                        <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* プリセット */}
         <View style={styles.section}>
@@ -264,6 +352,25 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   sectionTitle: { ...typography.h4, marginBottom: spacing.sm },
   toggleText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
+  dmPartnerList: { gap: spacing.xs },
+  dmPartnerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  dmPartnerCardSelected: { borderColor: colors.primary, backgroundColor: colors.accent },
+  dmAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  dmAvatarEmoji: { fontSize: 18 },
+  dmPartnerInfo: { flex: 1 },
+  dmPartnerName: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 3 },
+  dmBadgeRow: { flexDirection: 'row', gap: 4 },
+  dmBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: borderRadius.round },
+  dmBadgeText: { fontSize: 10, fontWeight: '600' },
   presetGrid: { flexDirection: 'row', gap: spacing.sm },
   presetCard: {
     flex: 1,

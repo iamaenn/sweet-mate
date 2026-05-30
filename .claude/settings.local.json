@@ -6,7 +6,15 @@
       "Bash(npm install *)",
       "Read(//usr/local/**)",
       "Bash(command -v node)",
-      "PowerShell(winget --version)"
+      "PowerShell(winget --version)",
+      "Bash(Get-ChildItem -Recurse -Path \"C:\\\\Users\\\\rwaiz\\\\sweet-mate\\\\src\" -Filter \"*.ts\" -o -Filter \"*.tsx\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "PowerShell(Get-Command node -ErrorAction SilentlyContinue; Get-Command node.exe -ErrorAction SilentlyContinue; $env:PATH -split \";\" | Where-Object { $_ -match \"node\" })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\rwaiz\\\\sweet-mate\" -Recurse -Directory | Select-Object -First 30 | ForEach-Object { $_.FullName })",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

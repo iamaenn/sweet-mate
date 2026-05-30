@@ -15,13 +15,13 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, borderRadius, shadow, typography } from '../../constants/theme';
-import { DMConversation, DMStackParamList } from '../../types';
+import { DMConversation, DMStackParamList, PlatformKey } from '../../types';
 
 type NavProp = StackNavigationProp<DMStackParamList, 'ConversationList'>;
 
 const STORAGE_KEY = '@sweetmate_conversations';
 
-const PLATFORMS: { key: DMConversation['platform']; label: string; color: string; emoji: string }[] = [
+const PLATFORMS: { key: PlatformKey; label: string; color: string; emoji: string }[] = [
   { key: 'line', label: 'LINE', color: '#06C755', emoji: '💬' },
   { key: 'instagram', label: 'Instagram', color: '#E1306C', emoji: '📸' },
   { key: 'matching', label: 'マッチングアプリ', color: '#FF6B8A', emoji: '💕' },
@@ -32,7 +32,7 @@ export default function ConversationListScreen() {
   const [conversations, setConversations] = useState<DMConversation[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newPlatform, setNewPlatform] = useState<DMConversation['platform']>('line');
+  const [newPlatforms, setNewPlatforms] = useState<PlatformKey[]>([]);
 
   useEffect(() => {
     loadConversations();
@@ -41,7 +41,15 @@ export default function ConversationListScreen() {
   const loadConversations = async () => {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEY);
-      if (data) setConversations(JSON.parse(data));
+      if (data) {
+        const raw = JSON.parse(data) as any[];
+        // 旧データ(platform: string)を新形式(platforms: string[])に移行
+        const migrated: DMConversation[] = raw.map(c => ({
+          ...c,
+          platforms: c.platforms ?? (c.platform ? [c.platform] : ['line']),
+        }));
+        setConversations(migrated);
+      }
     } catch {}
   };
 
@@ -51,21 +59,32 @@ export default function ConversationListScreen() {
     } catch {}
   };
 
+  const togglePlatform = (key: PlatformKey) => {
+    setNewPlatforms(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
+
   const addConversation = () => {
     if (!newName.trim()) {
       Alert.alert('エラー', '相手の名前を入力してください');
       return;
     }
+    if (newPlatforms.length === 0) {
+      Alert.alert('エラー', 'プラットフォームを1つ以上選んでください');
+      return;
+    }
     const newConv: DMConversation = {
       id: Date.now().toString(),
       name: newName.trim(),
-      platform: newPlatform,
+      platforms: newPlatforms,
       updatedAt: new Date().toISOString(),
     };
     const updated = [newConv, ...conversations];
     setConversations(updated);
     saveConversations(updated);
     setNewName('');
+    setNewPlatforms([]);
     setShowAdd(false);
   };
 
@@ -84,8 +103,8 @@ export default function ConversationListScreen() {
     ]);
   };
 
-  const getPlatformInfo = (platform: DMConversation['platform']) =>
-    PLATFORMS.find(p => p.key === platform) || PLATFORMS[0];
+  const getPlatformInfo = (key: PlatformKey) =>
+    PLATFORMS.find(p => p.key === key) || PLATFORMS[0];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -122,21 +141,24 @@ export default function ConversationListScreen() {
               value={newName}
               onChangeText={setNewName}
             />
-            <Text style={styles.platformLabel}>プラットフォーム</Text>
+            <Text style={styles.platformLabel}>プラットフォーム（複数選択可）</Text>
             <View style={styles.platformRow}>
-              {PLATFORMS.map(p => (
-                <TouchableOpacity
-                  key={p.key}
-                  style={[styles.platformChip, newPlatform === p.key && { backgroundColor: p.color, borderColor: p.color }]}
-                  onPress={() => setNewPlatform(p.key)}
-                >
-                  <Text style={styles.platformChipEmoji}>{p.emoji}</Text>
-                  <Text style={[styles.platformChipText, newPlatform === p.key && { color: '#fff' }]}>{p.label}</Text>
-                </TouchableOpacity>
-              ))}
+              {PLATFORMS.map(p => {
+                const selected = newPlatforms.includes(p.key);
+                return (
+                  <TouchableOpacity
+                    key={p.key}
+                    style={[styles.platformChip, selected && { backgroundColor: p.color, borderColor: p.color }]}
+                    onPress={() => togglePlatform(p.key)}
+                  >
+                    <Text style={styles.platformChipEmoji}>{p.emoji}</Text>
+                    <Text style={[styles.platformChipText, selected && { color: '#fff' }]}>{p.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
             <View style={styles.addFormButtons}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => { setShowAdd(false); setNewName(''); }}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => { setShowAdd(false); setNewName(''); setNewPlatforms([]); }}>
                 <Text style={styles.cancelBtnText}>キャンセル</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.confirmBtn} onPress={addConversation}>
@@ -155,7 +177,8 @@ export default function ConversationListScreen() {
           </View>
         ) : (
           conversations.map(conv => {
-            const platform = getPlatformInfo(conv.platform);
+            const platformInfos = conv.platforms.map(k => getPlatformInfo(k));
+            const avatarPlatform = platformInfos[0];
             return (
               <TouchableOpacity
                 key={conv.id}
@@ -164,15 +187,17 @@ export default function ConversationListScreen() {
                 onLongPress={() => deleteConversation(conv.id)}
                 activeOpacity={0.85}
               >
-                <View style={[styles.avatar, { backgroundColor: platform.color + '20' }]}>
-                  <Text style={styles.avatarEmoji}>{platform.emoji}</Text>
+                <View style={[styles.avatar, { backgroundColor: avatarPlatform.color + '20' }]}>
+                  <Text style={styles.avatarEmoji}>{avatarPlatform.emoji}</Text>
                 </View>
                 <View style={styles.convInfo}>
                   <Text style={styles.convName}>{conv.name}</Text>
                   <View style={styles.convMeta}>
-                    <View style={[styles.platformBadge, { backgroundColor: platform.color + '15' }]}>
-                      <Text style={[styles.platformBadgeText, { color: platform.color }]}>{platform.label}</Text>
-                    </View>
+                    {platformInfos.map(p => (
+                      <View key={p.key} style={[styles.platformBadge, { backgroundColor: p.color + '15' }]}>
+                        <Text style={[styles.platformBadgeText, { color: p.color }]}>{p.label}</Text>
+                      </View>
+                    ))}
                     {conv.lastMessage && (
                       <Text style={styles.lastMessage} numberOfLines={1}>{conv.lastMessage}</Text>
                     )}
