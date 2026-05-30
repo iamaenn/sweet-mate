@@ -36,10 +36,12 @@ export interface ReplyOption {
   tone: ReplyTone;
 }
 
+export type PlatformKey = 'line' | 'instagram' | 'matching';
+
 export interface DMConversation {
   id: string;
   name: string;
-  platform: 'line' | 'instagram' | 'matching';
+  platforms: PlatformKey[];
   imageUri?: string;
   lastMessage?: string;
   updatedAt: string;
