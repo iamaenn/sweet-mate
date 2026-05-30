@@ -5,7 +5,8 @@
   },
 
   "features": {
-    "ghcr.io/devcontainers/features/git:1": {}
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
   "forwardPorts": [8081, 19000, 19001, 19002, 19006],
